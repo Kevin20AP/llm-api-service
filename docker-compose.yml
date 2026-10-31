@@ -1,0 +1,46 @@
+# docker-compose.yml — defines all 4 services and wires them together.
+# Start everything with:  docker compose up
+
+services:
+  # PostgreSQL database
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: llm_api
+    volumes:
+      - pgdata:/var/lib/postgresql/data   # keeps your data between restarts
+
+  # Redis (the Celery broker + result store)
+  redis:
+    image: redis:7
+
+  # The FastAPI web server
+  web:
+    build: .
+    command: uv run uvicorn main:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"                        # reach it at http://localhost:8000
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      DATABASE_URL: postgresql+psycopg2://postgres:postgres@db:5432/llm_api
+      CELERY_BROKER: redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+
+  # The Celery worker (runs background jobs)
+  worker:
+    build: .
+    command: uv run celery -A tasks worker --loglevel=info
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      DATABASE_URL: postgresql+psycopg2://postgres:postgres@db:5432/llm_api
+      CELERY_BROKER: redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+
+volumes:
+  pgdata:

@@ -1,13 +1,19 @@
+"""
+Celery background tasks — run slow LLM calls OFF the web request.
+
+The broker/result-store address is read from an environment variable so the
+SAME code works both locally (Redis on localhost) and in Docker (Redis is a
+service named 'redis'). Local default = localhost.
+"""
+
 import os
 from celery import Celery
 from anthropic import Anthropic
 
-# Point Celery at Redis for both the job queue and the result store.
-celery_app = Celery(
-    "llm_tasks",
-    broker="redis://localhost:6379/0",
-    backend="redis://localhost:6379/0",
-)
+# Read Redis address from env; fall back to localhost for local development.
+BROKER = os.environ.get("CELERY_BROKER", "redis://localhost:6379/0")
+
+celery_app = Celery("llm_tasks", broker=BROKER, backend=BROKER)
 
 client = Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY", "").strip())
 MODEL = "claude-sonnet-5"

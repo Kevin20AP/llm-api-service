@@ -1,0 +1,8 @@
+# Keep these OUT of the Docker image (they'd bloat it or break the build).
+.venv
+__pycache__
+*.pyc
+.git
+.env
+.pyprojectx
+**/__pycache__
