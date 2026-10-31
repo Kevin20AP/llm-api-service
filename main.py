@@ -10,12 +10,11 @@ from anthropic import Anthropic
 from celery.result import AsyncResult
 
 from tasks import generate_reply, celery_app
-from db import SessionLocal, Conversation, init_db
+from db import SessionLocal, Conversation
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
-    init_db()   # make sure the tables exist when the server starts
+async def lifespan(app: FastAPI):   #  # Alembic now manages the database schema.
     yield
 
 
@@ -70,6 +69,7 @@ def chat(req: ChatRequest):
             user_message=req.messages[-1].content,
             reply=text,
             model=MODEL,
+            tokens_used=resp.usage.output_tokens
         )
         db.add(row)
         db.commit()
@@ -114,6 +114,7 @@ def list_conversations():
                 "user_message": r.user_message,
                 "reply": r.reply,
                 "model": r.model,
+                "tokens_used": r.tokens_used, 
                 "created_at": str(r.created_at),
             }
             for r in rows

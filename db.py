@@ -24,6 +24,7 @@ class Conversation(Base):
     user_message: Mapped[str] = mapped_column(Text)
     reply: Mapped[str] = mapped_column(Text)
     model: Mapped[str] = mapped_column(String(100))
+    tokens_used: Mapped[int | None] = mapped_column(Integer, nullable=True) 
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
